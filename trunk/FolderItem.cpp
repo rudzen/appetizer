@@ -1327,7 +1327,7 @@ wxString appFolderItem::ResolvePath(const wxString& filePath, bool normalizeToo)
   wxString result(filePath);
 
   if (result.Index(_T("$(")) != wxNOT_FOUND) {
-    result.Replace(_T("$(AppetizerPath"), FilePaths::GetApplicationDirectory());
+    result.Replace(_T("$(AppetizerPath)"), FilePaths::GetApplicationDirectory());
     result.Replace(_T("$(Drive)"), FilePaths::GetApplicationDrive());
     result.Replace(_T("$(System32)"), FilePaths::GetSystem32Directory());
     result.Replace(_T("$(Windows)"), FilePaths::GetWindowsDirectory());

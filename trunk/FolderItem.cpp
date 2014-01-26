@@ -540,28 +540,38 @@ appFolderItem* appFolderItem::SearchChildByFilename(const wxString& filename, in
 
 
 void appFolderItem::Launch(const wxString& filePath, const wxString& arguments, bool notifyPlugins) {
+  wxArrayString argumentsArray;
+  if (arguments != wxEmptyString) {
+    argumentsArray.Add(arguments);
+  }
+  return Launch(filePath, argumentsArray, notifyPlugins);
+}
+
+void appFolderItem::Launch(const wxString& filePath, const wxArrayString& arguments, bool notifyPlugins) {
 
   if (notifyPlugins) {
-    wxString* filePathP = new wxString(filePath);
-    wxString* argumentsP = new wxString(arguments);
-    wxString* cancelP = new wxString(_T("0"));
+    for (int i = 0; i < arguments.Count(); i++) {
+      wxString* filePathP = new wxString(filePath);
+      wxString* argumentsP = new wxString(arguments[i]);
+      wxString* cancelP = new wxString(_T("0"));
 
-    LuaHostTable eventTable;
-    eventTable[_T("cancel")] = new LuaHostTableItem((wxObject*)cancelP, LHT_boolean);
-    eventTable[_T("filePath")] = new LuaHostTableItem((wxObject*)filePathP, LHT_string);
-    eventTable[_T("arguments")] = new LuaHostTableItem((wxObject*)argumentsP, LHT_string);
-    wxGetApp().GetPluginManager()->DispatchEvent(&(wxGetApp()), _T("shorcutLaunching"), eventTable);
+      LuaHostTable eventTable;
+      eventTable[_T("cancel")] = new LuaHostTableItem((wxObject*)cancelP, LHT_boolean);
+      eventTable[_T("filePath")] = new LuaHostTableItem((wxObject*)filePathP, LHT_string);
+      eventTable[_T("arguments")] = new LuaHostTableItem((wxObject*)argumentsP, LHT_string);
+      wxGetApp().GetPluginManager()->DispatchEvent(&(wxGetApp()), _T("shorcutLaunching"), eventTable);
 
-    wxString* sCancelled = (wxString*)(eventTable[_T("cancel")]->value);
-    bool cancelled = sCancelled->Mid(0,1) == _T("1");
+      wxString* sCancelled = (wxString*)(eventTable[_T("cancel")]->value);
+      bool cancelled = sCancelled->Mid(0,1) == _T("1");
     
-    wxDELETE(filePathP);
-    wxDELETE(argumentsP);
-    wxDELETE(cancelP);
+      wxDELETE(filePathP);
+      wxDELETE(argumentsP);
+      wxDELETE(cancelP);
 
-    if (cancelled) {
-      ILOG(_T("Launch has been cancelled by plugin"));
-      return;
+      if (cancelled) {
+        ILOG(_T("Launch has been cancelled by plugin"));
+        return;
+      }
     }
   }
   
@@ -587,7 +597,7 @@ void appFolderItem::Launch(const wxString& filePath, const wxString& arguments, 
       wxString saveCurrentDirectory = wxGetCwd();
       wxSetWorkingDirectory(filename.GetPath());
 
-      if (arguments == wxEmptyString) {
+      if (arguments.Count() == 0) {
 
         // ---------------------------
         // Without arguments
@@ -600,15 +610,20 @@ void appFolderItem::Launch(const wxString& filePath, const wxString& arguments, 
         // With arguments
         // ---------------------------
 
-        wxString tArguments(arguments); 
-        // If the argument is a file path, then check that it has double quotes        
-        if (wxFileName::FileExists(tArguments)) {
-          tArguments = appFolderItem::ResolvePath(tArguments);
-          if (tArguments[0] != _T('"') && tArguments[arguments.Len() - 1] != _T('"')) {
-            tArguments = _T('"') + tArguments + _T('"');
-          }          
-        }
-        wxExecute(wxString::Format(_T("%s %s"), filePath, tArguments));
+        wxString command(filePath);
+        for (int i = 0; i < arguments.Count(); i++) {
+          wxString tArguments(arguments[i]);
+
+          // If the argument is a file path, then check that it has double quotes        
+          if (wxFileName::FileExists(tArguments)) {
+            tArguments = appFolderItem::ResolvePath(tArguments);
+            if (tArguments[0] != _T('"') && tArguments[arguments[i].Len() - 1] != _T('"')) {
+              tArguments = _T('"') + tArguments + _T('"');
+            }          
+          }
+		  command = wxString::Format(_T("%s %s"), command, tArguments);
+		}
+        wxExecute(command);
 
       }
 
@@ -900,6 +915,14 @@ void appFolderItem::Launch() {
 
 
 void appFolderItem::LaunchWithArguments(const wxString& arguments) {
+  wxArrayString argumentsArray;
+  if (arguments != wxEmptyString) {
+    argumentsArray.Add(arguments);
+  }
+  return LaunchWithArguments(argumentsArray);
+}
+
+void appFolderItem::LaunchWithArguments(const wxArrayString& arguments) {
   appFolderItem::Launch(appFolderItem::ResolvePath(filePath_, false), arguments);
 }
 

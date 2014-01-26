@@ -502,12 +502,14 @@ bool IconPanel::OnDropFiles(wxCoord x, wxCoord y, const wxArrayString& filenames
 
       }
 
+	  wxArrayString filenamesFullPath;
       for (int i = 0; i < filenames.Count(); i++) {
         wxFileName filename(filenames[i]);
         filename.Normalize();
-        folderItem->LaunchWithArguments(filename.GetFullPath());
-        didSomething = true;
-      }      
+		filenamesFullPath.Add(filename.GetFullPath());
+      }
+      folderItem->LaunchWithArguments(filenamesFullPath);
+      didSomething = true;
 
     } else {
       // The files have been dropped on the icon panel itself
